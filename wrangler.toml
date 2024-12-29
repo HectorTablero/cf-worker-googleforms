@@ -20,16 +20,10 @@ enabled = false
   invocation_logs = true
 
 [[services]]
-binding = "ACTIONS"
-service = "actions"
+binding = "ESN_RECRUITMENT"
+service = "esn-recruitment"
 environment = "production"
-entrypoint = "ActionsWorker"
-
-[[services]]
-binding = "EMAIL_SERVICE"
-service = "email"
-environment = "production"
-entrypoint = "EmailWorker"
+entrypoint = "GoogleFormsEntrypoint"
 
 [[services]]
 binding = "UTILS"
@@ -38,16 +32,8 @@ environment = "production"
 entrypoint = "UtilsWorker"
 
 [[kv_namespaces]]
-id = "99e606cc58634a1ca7c522fb530cde53"
-binding = "ESN_RECRUITMENT"
-
-[[kv_namespaces]]
 id = "10a39c9922d447c19bee76aa1e7c0042"
 binding = "GOOGLE_FORMS"
-
-[[kv_namespaces]]
-id = "7390a7e250aa45ab836178a85b770b91"
-binding = "TEMP_KV"
 
 [unsafe]
   [[unsafe.bindings]]
