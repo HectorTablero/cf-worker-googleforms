@@ -25,6 +25,7 @@ export default (baseUrl, key) => `<!DOCTYPE html>
           display: flex;
           gap: 2rem;
           height: 70vh;
+          overflow-y: clip;
         }
 
         .progress {
