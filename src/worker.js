@@ -117,11 +117,18 @@ export default {
 					}
 				}
 			} else if (request.method === 'GET') {
-				// const id = await env.UTILS.generateID(25);
-				// const key = await env.UTILS.generateID(50);
-				// await env.GOOGLE_FORMS.put(`registrationKey-${key}`, id, { expirationTtl: 3600 });
-				// await env.GOOGLE_FORMS.put(`registration-${id}`, JSON.stringify({ fixedUrl: "esn/recruitment", handler: "esn-recruitment", handlerData: { a: 1 }, key }), { expirationTtl: 3600 });
-				// return;
+				// TODO: Remove this
+				if (urlStack === 'new') {
+					const id = await env.UTILS.generateID(25);
+					const key = await env.UTILS.generateID(50);
+					await env.GOOGLE_FORMS.put(`registrationKey-${key}`, id, { expirationTtl: 3600 });
+					await env.GOOGLE_FORMS.put(
+						`registration-${id}`,
+						JSON.stringify({ fixedUrl: 'esn/recruitment', handler: 'esn-recruitment', handlerData: null, key }),
+						{ expirationTtl: 3600 }
+					);
+					return;
+				}
 				const data = await env.GOOGLE_FORMS.get(`registration-${urlStack}`, 'json');
 				if (data) return new Response(setupPage(data.fixedUrl, data.key), { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
 				return new Response('Resource not found.', { status: 404, headers: corsHeaders });
