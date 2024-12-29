@@ -18,7 +18,8 @@ export class GoogleFormsWorker extends WorkerEntrypoint {
 
 async function handleResponse(env, actionData, response) {
 	console.log(actionData, response);
-	if (actionData.handler === 'esn-recruitment') return await env.ESN_RECRUITMENT.handleResponse(actionData, response);
+	const data = { handlerData: actionData.handlerData, formData: actionData.formData };
+	if (actionData.handler === 'esn-recruitment') return await env.ESN_RECRUITMENT.handleResponse(data, response);
 }
 
 export default {
