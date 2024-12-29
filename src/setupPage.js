@@ -712,6 +712,7 @@ export default (baseUrl, key) => `<!DOCTYPE html>
         div.style.alignItems = "center";
         div.style.height = "100%";
         div.style.width = "100%";
+        const p = document.createElement("p");
         p.textContent = "El Form se ha registrado correctamente.";
         p.style.color = "var(--main-color)";
         p.style.fontWeight = "700";
