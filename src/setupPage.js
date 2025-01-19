@@ -1,6 +1,6 @@
 // TODO: Indicar dónde está cada botón
 
-export default (key, ctx) => `<!DOCTYPE html>
+export default (ctx) => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -336,8 +336,6 @@ export default (key, ctx) => `<!DOCTYPE html>
         <div class="progress-point" id="point2"></div>
         <div class="progress-line" id="line2"></div>
         <div class="progress-point" id="point3"></div>
-        <div class="progress-line" id="line3"></div>
-        <div class="progress-point" id="point4"></div>
       </div>
       <form id="processForm">
         <div id="step1" class="accordion active">
@@ -367,7 +365,9 @@ export default (key, ctx) => `<!DOCTYPE html>
     
   <span style="color:rgb(180, 142, 173); font-weight:400;">try</span> {
     <span style="color:rgb(180, 142, 173); font-weight:400;">const</span> code = <span class="hljs-title function_">generateCode</span>();
-    <span style="color:rgb(180, 142, 173); font-weight:400;">const</span> payload = <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">stringify</span>({ code, formData, <span style="color:rgb(192, 197, 206); font-weight:400;">key</span>: <span style="color:rgb(163, 190, 140); font-weight:400;">&quot;<span id="keyReplace">${key}</span>&quot;</span> });
+    <span style="color:rgb(180, 142, 173); font-weight:400;">const</span> payload = <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">stringify</span>({ code, formData, <span style="color:rgb(192, 197, 206); font-weight:400;">key</span>: <span style="color:rgb(163, 190, 140); font-weight:400;">&quot;<span id="keyReplace">${
+			ctx.key
+		}</span>&quot;</span> });
     <span class="hljs-title function_">sendPostRequest</span>(<span style="color:rgb(163, 190, 140); font-weight:400;">&quot;register&quot;</span>, payload);
     <span class="hljs-title class_">Logger</span>.<span class="hljs-title function_">log</span>(<span style="color:rgb(163, 190, 140); font-weight:400;">\`Your code is <span style="color:rgb(163, 190, 140); font-weight:400;">\${code}</span>\`</span>);
   } <span style="color:rgb(180, 142, 173); font-weight:400;">catch</span> (error) {
@@ -642,7 +642,7 @@ export default (key, ctx) => `<!DOCTYPE html>
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              key: '${key}',
+              key: '${ctx.key}',
               code,
             }),
           })

@@ -124,13 +124,13 @@ export default {
 					await env.GOOGLE_FORMS.put(`registrationKey-${key}`, id, { expirationTtl: 3600 });
 					await env.GOOGLE_FORMS.put(
 						`registration-${id}`,
-						JSON.stringify({ fixedUrl: 'esn/recruitment', handler: 'esn-recruitment', handlerData: null, key }),
+						JSON.stringify({ handler: 'esn-recruitment', handlerData: null, key, color: '#0076b4' }),
 						{ expirationTtl: 3600 }
 					);
 					return new Response.redirect(`https://workers.tablerus.es/googleforms/${id}`, 302);
 				}
 				const data = await env.GOOGLE_FORMS.get(`registration-${urlStack}`, 'json');
-				if (data) return new Response(setupPage(data.fixedUrl, data.key), { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
+				if (data) return new Response(setupPage(data), { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
 				return new Response('Resource not found.', { status: 404, headers: corsHeaders });
 			}
 		} catch (e) {
