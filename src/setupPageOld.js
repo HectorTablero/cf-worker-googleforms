@@ -1,6 +1,6 @@
 // TODO: Indicar dónde está cada botón
 
-export default (key, ctx) => `<!DOCTYPE html>
+export default (baseUrl, key) => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -8,7 +8,7 @@ export default (key, ctx) => `<!DOCTYPE html>
     <title>Google Forms Hook Setup</title>
     <style>
         :root {
-          --main-color: ${ctx.color || '#f39c12'};
+          --main-color: #f39c12;
           --gray-color: #ccc;
         }
 
@@ -341,12 +341,26 @@ export default (key, ctx) => `<!DOCTYPE html>
       </div>
       <form id="processForm">
         <div id="step1" class="accordion active">
-          <p>Ve al form que quieres conectar, haz click en los 3 puntos (︙) y entra en "Editor de secuencias de comandos".</p>
+          <p>Introduce un identificador para el formulario (eg. "bienvenida").</p>
+          <div class="input-with-prefix">
+            <span>/</span>
+            <span id="urlStart">${baseUrl}</span>
+            <span>/</span>
+            <input type="text" id="idInput" placeholder="nueva-id" />
+          </div>
+          <span id="idError">La id solo puede tener carácteres alfanuméricos y guiones.<br />Longitud mínima: 4</span>
           <div class="button-group">
             <button type="button" class="btn-next" onclick="goToStep(2)">Next</button>
           </div>
         </div>
         <div id="step2" class="accordion">
+          <p>Ve al form que quieres conectar, haz click en los 3 puntos (︙) y entra en "Editor de secuencias de comandos".</p>
+          <div class="button-group">
+            <button type="button" class="btn-back" onclick="goToStep(1)">Back</button>
+            <button type="button" class="btn-next" onclick="goToStep(3)">Next</button>
+          </div>
+        </div>
+        <div id="step3" class="accordion">
           <p>Copia este código y pégalo en el editor de secuencias de comandos (reemplaza el código actual). Asegúrate de guardar el archivo.</p>
           <!-- https://codebeautify.org/code-highlighter - Ocean -->
           <div class="code-block-container">
@@ -493,7 +507,7 @@ export default (key, ctx) => `<!DOCTYPE html>
 }
     
 <span style="color:rgb(180, 142, 173); font-weight:400;">function</span> <span class="hljs-title function_">sendPostRequest</span>(<span style="color:rgb(208, 135, 112); font-weight:400;">action, payload</span>) {
-  <span class="hljs-title class_">UrlFetchApp</span>.<span class="hljs-title function_">fetch</span>(<span style="color:rgb(163, 190, 140); font-weight:400;">\`https://workers.tablerus.es/googleforms/v2/<span style="color:rgb(163, 190, 140); font-weight:400;">\${action}</span>\`</span>, {
+  <span class="hljs-title class_">UrlFetchApp</span>.<span class="hljs-title function_">fetch</span>(<span style="color:rgb(163, 190, 140); font-weight:400;">\`https://workers.tablerus.es/googleforms/v1/<span style="color:rgb(163, 190, 140); font-weight:400;">\${action}</span>/<span id="codeReplaceID"></span>\`</span>, {
     <span style="color:rgb(192, 197, 206); font-weight:400;">method</span>: <span style="color:rgb(163, 190, 140); font-weight:400;">&quot;POST&quot;</span>,
     <span style="color:rgb(192, 197, 206); font-weight:400;">contentType</span>: <span style="color:rgb(163, 190, 140); font-weight:400;">&quot;application/json&quot;</span>,
     payload
@@ -504,11 +518,11 @@ export default (key, ctx) => `<!DOCTYPE html>
             </button>
           </div>
           <div class="button-group">
-            <button type="button" class="btn-back" onclick="goToStep(1)">Back</button>
-            <button type="button" class="btn-next" onclick="goToStep(3)">Next</button>
+            <button type="button" class="btn-back" onclick="goToStep(2)">Back</button>
+            <button type="button" class="btn-next" onclick="goToStep(4)">Next</button>
           </div>
         </div>
-        <div id="step3" class="accordion">
+        <div id="step4" class="accordion">
           <p>
             Entra en la pestaña de activadores (
             <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="#000" style="margin: 0 -3px -4px -3px">
@@ -528,7 +542,7 @@ export default (key, ctx) => `<!DOCTYPE html>
           </div>
           <span id="codeError"></span>
           <div class="button-group">
-            <button type="button" class="btn-back" onclick="goToStep(2)">Back</button>
+            <button type="button" class="btn-back" onclick="goToStep(3)">Back</button>
             <button type="button" class="btn-next" onclick="submitCode()">Submit</button>
           </div>
         </div>
@@ -537,7 +551,28 @@ export default (key, ctx) => `<!DOCTYPE html>
 
     <script>
       let activeStep = 1;
-      const LAST_STEP = 3;
+      const LAST_STEP = 4;
+
+      document.querySelectorAll(".input-with-prefix").forEach((div) => {
+        div.addEventListener("click", () => div.querySelector("input").focus());
+      });
+
+      document.getElementById("idInput").addEventListener("input", function () {
+        const idInput = this;
+        const error = document.querySelector("#idError");
+        const trimmedValue = idInput.value.trim().toLowerCase();
+        idInput.value = trimmedValue;
+        const isValid = trimmedValue.length >= 4 && /^[a-z0-9-]+$/.test(trimmedValue);
+        if (isValid) error.classList.remove("active");
+        else error.classList.add("active");
+      });
+
+      document.getElementById("idInput").addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          goToStep(2);
+        }
+      });
 
       document.querySelectorAll(".copy-btn").forEach((button) => {
         button.addEventListener("click", () => {
@@ -611,6 +646,20 @@ export default (key, ctx) => `<!DOCTYPE html>
       });
 
       function goToStep(step) {
+        if (step === 2) {
+          const idInput = document.getElementById("idInput");
+          const error = document.querySelector("#idError");
+          const trimmedValue = idInput.value.trim().toLowerCase();
+          idInput.value = trimmedValue;
+          const isValid = trimmedValue.length >= 4 && /^[a-z0-9-]+$/.test(trimmedValue);
+          if (isValid) error.classList.remove("active");
+          else {
+            error.classList.add("active");
+            return;
+          }
+          document.querySelector("#codeReplaceID").textContent = \`\${document.querySelector("#urlStart").textContent}/\${trimmedValue}\`;
+        }
+
         activeStep = step;
         document.activeElement.blur();
 
@@ -636,7 +685,7 @@ export default (key, ctx) => `<!DOCTYPE html>
         const code = Array.from(inputs).map(input => input.value).join('');
 
         if (code.length === 6) {
-          fetch('https://workers.tablerus.es/googleforms/v2/validate', {
+          fetch('https://workers.tablerus.es/googleforms/v1/validate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -660,7 +709,7 @@ export default (key, ctx) => `<!DOCTYPE html>
       }
 
       function submitForm() {
-        goToStep(LAST_STEP + 1);
+        goToStep(5);
         const div = document.createElement("div");
         div.style.display = "flex";
         div.style.justifyContent = "center";

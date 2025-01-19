@@ -40,6 +40,8 @@ export default {
 				const ipAddress = request.headers.get('CF-Connecting-IP') || request.headers.get('cf-connecting-ip') || '';
 
 				if (version === 'v1') {
+					return new Response('This version is deprecated. Please use v2.', { status: 400, headers: corsHeaders });
+				} else if (version === 'v2') {
 					if (action === 'register') {
 						const rateLimitKey = `register-${ipAddress}-${reqBody.key}`;
 						const { success } = await env.RATE_LIMITER.limit({ key: rateLimitKey });
@@ -78,22 +80,18 @@ export default {
 								const registrationData = await env.GOOGLE_FORMS.get(`registration-${id}`, 'json');
 								if (!registrationData) return new Response('Registration data not found.', { status: 404, headers: corsHeaders });
 
-								if (data.url.startsWith(registrationData.fixedUrl) || data.url.startsWith('/' + registrationData.fixedUrl)) {
-									await env.GOOGLE_FORMS.put(
-										`data-${data.url}`,
-										JSON.stringify({
-											handler: registrationData.handler,
-											handlerData: registrationData.handlerData,
-											appsScriptId: data.appsScriptId,
-											formData: data.formData,
-										})
-									);
-									await env.GOOGLE_FORMS.delete(`registration-${id}`);
-									await env.GOOGLE_FORMS.delete(`registrationKey-${key}`);
-									await env.GOOGLE_FORMS.delete(`registrationData-${key}`);
-									return new Response('Validation successful.', { status: 200, headers: corsHeaders });
-								}
-								return new Response('URL mismatch.', { status: 400, headers: corsHeaders });
+								await env.GOOGLE_FORMS.put(
+									`data-${data.appsScriptId}`,
+									JSON.stringify({
+										handler: registrationData.handler,
+										handlerData: registrationData.handlerData,
+										formData: data.formData,
+									})
+								);
+								await env.GOOGLE_FORMS.delete(`registration-${id}`);
+								await env.GOOGLE_FORMS.delete(`registrationKey-${key}`);
+								await env.GOOGLE_FORMS.delete(`registrationData-${key}`);
+								return new Response('Validation successful.', { status: 200, headers: corsHeaders });
 							}
 							return new Response('Invalid code.', { status: 400, headers: corsHeaders });
 						} catch (error) {
@@ -101,19 +99,21 @@ export default {
 							return new Response('An error occurred during validation.', { status: 500, headers: corsHeaders });
 						}
 					} else if (action === 'response') {
-						const actionData = await env.GOOGLE_FORMS.get(`data-${url}`, 'json');
-						if (actionData) {
-							try {
-								const data = new Set(request.headers.get('user-agent').split(')', 1)[0].split('(', 2)[1].split('; '));
-								if (data.has('Google-Apps-Script') && data.has(`id: ${actionData.appsScriptId}`)) {
-									await handleResponse(env, actionData, reqBody);
-									return new Response('Response handled.', { status: 200, headers: corsHeaders });
-								}
-							} catch (error) {
-								console.error(error);
-								return new Response('An error occurred while handling the response.', { status: 500, headers: corsHeaders });
+						try {
+							const data = new Set(request.headers.get('user-agent').split(')', 1)[0].split('(', 2)[1].split('; '));
+							const appsScriptId = Array.from(data)
+								.filter((e) => e.startsWith('id: '))[0]
+								.substring(4);
+							if (data.has('Google-Apps-Script') && appsScriptId.length > 0) {
+								const actionData = await env.GOOGLE_FORMS.get(`data-${appsScriptId}`, 'json');
+								if (!actionData) return new Response('Resource not found.', { status: 404, headers: corsHeaders });
+								await handleResponse(env, actionData, reqBody);
+								return new Response('Response handled.', { status: 200, headers: corsHeaders });
 							}
-						} else return new Response('Resource not found.', { status: 404, headers: corsHeaders });
+						} catch (error) {
+							console.error(error);
+							return new Response('An error occurred while handling the response.', { status: 500, headers: corsHeaders });
+						}
 					}
 				}
 			} else if (request.method === 'GET') {
@@ -127,7 +127,7 @@ export default {
 						JSON.stringify({ fixedUrl: 'esn/recruitment', handler: 'esn-recruitment', handlerData: null, key }),
 						{ expirationTtl: 3600 }
 					);
-					return;
+					return new Response.redirect(`https://workers.tablerus.es/googleforms/${id}`, 302);
 				}
 				const data = await env.GOOGLE_FORMS.get(`registration-${urlStack}`, 'json');
 				if (data) return new Response(setupPage(data.fixedUrl, data.key), { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
