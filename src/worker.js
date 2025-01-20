@@ -11,7 +11,7 @@ export class GoogleFormsWorker extends WorkerEntrypoint {
 		const id = await this.env.UTILS.generateID(25);
 		const key = await this.env.UTILS.generateID(50);
 		await this.env.GOOGLE_FORMS.put(`registrationKey-${key}`, id, { expirationTtl: 3600 });
-		await this.env.GOOGLE_FORMS.put(`registration-${id}`, JSON.stringify({ fixedUrl, handler, handlerData, key }), { expirationTtl: 3600 });
+		await this.env.GOOGLE_FORMS.put(`registration-${id}`, JSON.stringify({ handler, handlerData, key }), { expirationTtl: 3600 });
 		return id;
 	}
 }
