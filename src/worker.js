@@ -7,7 +7,7 @@ export class GoogleFormsWorker extends WorkerEntrypoint {
 		return new Response(null, { status: 404 });
 	}
 
-	async openRegistration(fixedUrl, handler, handlerData) {
+	async openRegistration(handler, handlerData) {
 		const id = await this.env.UTILS.generateID(25);
 		const key = await this.env.UTILS.generateID(50);
 		await this.env.GOOGLE_FORMS.put(`registrationKey-${key}`, id, { expirationTtl: 3600 });
@@ -17,9 +17,33 @@ export class GoogleFormsWorker extends WorkerEntrypoint {
 }
 
 async function handleResponse(env, actionData, response) {
-	console.log(actionData, response);
-	const data = { handlerData: actionData.handlerData, formData: actionData.formData };
-	if (actionData.handler === 'esn-recruitment') return await env.ESN_RECRUITMENT.handleResponse(data, response);
+	const data = { handlerData: actionData.handlerData };
+	if (data.handlerData.sendFullForm) data.formData = actionData.formData;
+	const handlers = {
+		'esn-recruitment': env.ESN_RECRUITMENT,
+	};
+	if (handlers[actionData.handler]) return await handlers[actionData.handler].handleResponse(data, response);
+}
+
+async function connectForm(env, key, data, registrationData) {
+	await env.GOOGLE_FORMS.put(
+		`data-${data.appsScriptId}`,
+		JSON.stringify({
+			handler: registrationData.handler,
+			handlerData: registrationData.handlerData,
+			formData: data.formData,
+		})
+	);
+	await env.GOOGLE_FORMS.delete(`registration-${id}`);
+	await env.GOOGLE_FORMS.delete(`registrationKey-${key}`);
+	await env.GOOGLE_FORMS.delete(`registrationData-${key}`);
+	const handlers = {
+		'esn-recruitment': env.ESN_RECRUITMENT,
+	};
+	try {
+		if (handlers[registrationData.handler])
+			return await handlers[registrationData.handler].connectForm(registrationData.handlerData, data.formData);
+	} catch (e) {}
 }
 
 export default {
@@ -80,17 +104,7 @@ export default {
 								const registrationData = await env.GOOGLE_FORMS.get(`registration-${id}`, 'json');
 								if (!registrationData) return new Response('Registration data not found.', { status: 404, headers: corsHeaders });
 
-								await env.GOOGLE_FORMS.put(
-									`data-${data.appsScriptId}`,
-									JSON.stringify({
-										handler: registrationData.handler,
-										handlerData: registrationData.handlerData,
-										formData: data.formData,
-									})
-								);
-								await env.GOOGLE_FORMS.delete(`registration-${id}`);
-								await env.GOOGLE_FORMS.delete(`registrationKey-${key}`);
-								await env.GOOGLE_FORMS.delete(`registrationData-${key}`);
+								await connectForm(env, key, data, registrationData);
 								return new Response('Validation successful.', { status: 200, headers: corsHeaders });
 							}
 							return new Response('Invalid code.', { status: 400, headers: corsHeaders });
