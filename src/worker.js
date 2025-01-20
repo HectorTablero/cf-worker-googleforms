@@ -43,9 +43,13 @@ async function connectForm(env, key, id, data, registrationData) {
 		'esn-recruitment': env.ESN_RECRUITMENT,
 	};
 	try {
-		if (handlers[registrationData.handler])
+		if (handlers[registrationData.handler]) {
+			console.log(handlers[registrationData.handler]);
 			return await handlers[registrationData.handler].connectForm(registrationData.handlerData, data.formData);
-	} catch (e) {}
+		}
+	} catch (e) {
+		console.error(e);
+	}
 }
 
 export default {
