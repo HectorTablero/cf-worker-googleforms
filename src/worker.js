@@ -27,7 +27,7 @@ async function handleResponse(env, actionData, response) {
 	if (handlers[actionData.handler]) return await handlers[actionData.handler].handleResponse(data, response);
 }
 
-async function connectForm(env, key, data, registrationData) {
+async function connectForm(env, key, id, data, registrationData) {
 	await env.GOOGLE_FORMS.put(
 		`data-${data.appsScriptId}`,
 		JSON.stringify({
@@ -106,7 +106,7 @@ export default {
 								const registrationData = await env.GOOGLE_FORMS.get(`registration-${id}`, 'json');
 								if (!registrationData) return new Response('Registration data not found.', { status: 404, headers: corsHeaders });
 
-								await connectForm(env, key, data, registrationData);
+								await connectForm(env, key, id, data, registrationData);
 								return new Response('Validation successful.', { status: 200, headers: corsHeaders });
 							}
 							return new Response('Invalid code.', { status: 400, headers: corsHeaders });
